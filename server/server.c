@@ -8,8 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define PORT 3000
-#define SIZE_BUFFER 2048
+#include "../clients/utils/constantes.c"
 
 typedef struct segment
 {
@@ -32,7 +31,7 @@ int setupSocket() {
 
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
-	serverAddress.sin_port = htons(PORT);
+	serverAddress.sin_port = htons(SERVER_PORT);
 
 	if (bind(socketServer, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
 	{
