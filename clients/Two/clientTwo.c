@@ -8,17 +8,9 @@
 #include <unistd.h>
 #include <string.h>
 
-#define SIZE_BUFFER 1024
-#define PORTA_CLIENTEB 1502
+#include "../utils/objetos.c"
+#include "../utils/constantes.c"
 
-//estrutura do pacote
-typedef struct pacote
-{
-    int numseq;       //número de sequência do pacote
-    int checksum[8];  //valor do checksum do pacote
-    int tam;          //tamanho do pacote
-    char dados[1024]; //segmento do pacote
-} pacote;
 
 //função para somar dois valores binários
 void addBinary(int result[], int binario[])
@@ -45,9 +37,9 @@ void addBinary(int result[], int binario[])
 }
 
 //Função para calcular o cheksum do pacote
-int checksum(pacote *pkt)
+int checksum(pacote *pacote)
 {
-    if (pkt == NULL)
+    if (pacote == NULL)
         return 0; /* no input string */
 
     int binario[8];
@@ -55,10 +47,10 @@ int checksum(pacote *pkt)
     int Sum[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
     //percorre todas as 1204 posições
-    for (int i = 0; i < pkt->tam; ++i)
+    for (int i = 0; i < pacote->tam; ++i)
     {
         //tranforma cada posição em um palavra de 8 bits
-        char ch = pkt->dados[i];
+        char ch = pacote->dados[i];
         for (int j = 7; j >= 0; --j)
         {
             if (ch & (1 << j))
@@ -76,22 +68,22 @@ int checksum(pacote *pkt)
     for (int i = 0; i < 8; i++)
     {
         if (Sum[i] == 1)
-            pkt->checksum[i] = 0;
+            pacote->checksum[i] = 0;
         else
-            pkt->checksum[i] = 1;
+            pacote->checksum[i] = 1;
     }
 
     return 0;
 }
 
-//função responsável por transferir o arquivo para o cliente A
+//função responsável por transferir o arquivo para o cliente One
 int enviaPacote(FILE *arquivo, int socket_clienteB, struct sockaddr_in endereco_clienteA, socklen_t tam_struct_clienteA, char *buffer)
 {
 
     int num_seq = 0;
-    pacote pkt;
+    pacote pacote;
 
-    memset(&pkt, 0, sizeof(pkt));
+    memset(&pacote, 0, sizeof(pacote));
 
     //enquanto o arquivo não acabar
     while (!feof(arquivo))
@@ -100,16 +92,16 @@ int enviaPacote(FILE *arquivo, int socket_clienteB, struct sockaddr_in endereco_
         num_seq++;
 
         //preenche o pacote
-        pkt.tam = fread(pkt.dados, 1, 1024, arquivo);
-        pkt.numseq = num_seq;
-        checksum(&pkt);
+        pacote.tam = fread(pacote.dados, 1, 1024, arquivo);
+        pacote.numseq = num_seq;
+        checksum(&pacote);
 
         //envia o pacote
         while (1)
         {
             memset(buffer, '\0', SIZE_BUFFER);
 
-            if (sendto(socket_clienteB, &pkt, sizeof(pkt), 0, (struct sockaddr *)&endereco_clienteA, tam_struct_clienteA) < 0)
+            if (sendto(socket_clienteB, &pacote, sizeof(pacote), 0, (struct sockaddr *)&endereco_clienteA, tam_struct_clienteA) < 0)
             {
                 perror("Error");
                 exit(1);
@@ -125,11 +117,11 @@ int enviaPacote(FILE *arquivo, int socket_clienteB, struct sockaddr_in endereco_
             //só passa para o próximo pacote quando chegar um ACK simbolizado pelo valor "1"
             if (buffer[0] == '1')
             {
-                printf("Pacote %d enviado com sucesso!\n", pkt.numseq);
+                printf("Pacote %d enviado com sucesso!\n", pacote.numseq);
                 break;
             }
             else
-                printf("Falha ao enviar pacote %d, iniciando reenvio\n", pkt.numseq);
+                printf("Falha ao enviar pacote %d, iniciando reenvio\n", pacote.numseq);
         }
     }
 }
@@ -149,7 +141,7 @@ int configura_socket()
 
     memset(&endereco_clienteB, 0, sizeof(endereco_clienteB));
     endereco_clienteB.sin_family = AF_INET;
-    endereco_clienteB.sin_port = htons(PORTA_CLIENTEB);
+    endereco_clienteB.sin_port = htons(PORTA_CLIENTE_TWO);
 
     if (bind(socket_clienteB, (struct sockaddr *)&endereco_clienteB, sizeof(endereco_clienteB)) < 0)
     {
@@ -181,9 +173,9 @@ int main()
 
     socket_clienteB = configura_socket();
 
-    printf("Cliente B online\n\n");
+    printf("Cliente Two online\n\n");
 
-    //Comunicação com o cliente A
+    //Comunicação com o cliente One
     while (1)
     {
 
@@ -194,7 +186,7 @@ int main()
 
         recvfrom(socket_clienteB, buffer, SIZE_BUFFER, 0, (struct sockaddr *)&endereco_clienteA, &tam_struct_clienteA);
 
-        printf("Mensagem recebida do cliente A: %s\n", buffer);
+        printf("Mensagem recebida do cliente One: %s\n", buffer);
 
         if (verifica_buffer(buffer))
         {
