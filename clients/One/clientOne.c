@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     int sd;
     int PORT_CLIENT_TWO;
     struct sockaddr_in remoteServAddr;
-    struct sockaddr_in remoteClientB;
+    struct sockaddr_in remoteClientTwo;
 
     //buffer para guardar data temporários
     char *buffer = (char *)malloc(SIZE_BUFFER * sizeof(char));
@@ -264,21 +264,21 @@ int main(int argc, char *argv[])
 
     //Comunicação com o cliente Two
     //zerando a struct
-    memset(&remoteClientB, 0, sizeof(remoteClientB));
+    memset(&remoteClientTwo, 0, sizeof(remoteClientTwo));
 
     //struct com data do cliente Two
-    remoteClientB.sin_family = AF_INET;
-    remoteClientB.sin_port = htons(PORT_CLIENT_TWO);
-    remoteClientB.sin_addr.s_addr = inet_addr("127.0.0.1");
+    remoteClientTwo.sin_family = AF_INET;
+    remoteClientTwo.sin_port = htons(PORT_CLIENT_TWO);
+    remoteClientTwo.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     strcpy(buffer, argv[1]);
     //envia uma requisição com o nome do file para o cliente Two
-    sendMessage(sd, remoteClientB, buffer, 1);
+    sendMessage(sd, remoteClientTwo, buffer, 1);
     sleep(1);
     printf("Requisição enviada ao cliente que possui o file\n");
     memset(buffer, '\0', SIZE_BUFFER);
 
-    receiveMessage(sd, remoteClientB, buffer);
+    receiveMessage(sd, remoteClientTwo, buffer);
     //se o cliente Two confirmar que tem o file, começa a transferência
     if (buffer[0] == '1')
     {
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
         printf("Iniciando transferência\n");
         sleep(1);
         strcpy(buffer, argv[1]);
-        receivePackage(sd, remoteClientB, buffer);
+        receivePackage(sd, remoteClientTwo, buffer);
 
         //Avisando o servidor que o cliente One tambem possui o arquivo
         sendMessage(sd, remoteServAddr, buffer, 2);
