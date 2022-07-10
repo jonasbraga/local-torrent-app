@@ -77,7 +77,7 @@ int checksum(pacote *pacote)
 }
 
 //função responsável por transferir o arquivo para o cliente One
-int enviaPacote(FILE *arquivo, int socket_clienteB, struct sockaddr_in endereco_clienteA, socklen_t tam_struct_clienteA, char *buffer)
+void enviaPacote(FILE *arquivo, int socket_clienteB, struct sockaddr_in endereco_clienteA, socklen_t tam_struct_clienteA, char *buffer)
 {
 
     int num_seq = 0;

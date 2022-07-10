@@ -1,5 +1,5 @@
-files/senna.jpg 3001
-files/Trabalho_2.pdf 3001
-files/vai-dar-merda.mp4 3001
-files/metro.jpeg 3002
-files/mission-impossible.mp3 3002
+senna.jpg 3002
+Trabalho_2.pdf 3002
+vai-dar-merda.mp4 3002
+metro.jpeg 3002
+mission-impossible.mp3 3002
