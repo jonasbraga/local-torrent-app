@@ -13,17 +13,17 @@
 #include "../utils/constantes.c"
 
 
-//função para somar dois valores binários
+// Somando valores binários
 void addBinary(int result[], int binary[])
 {
     int i, c = 0;
 
-    int k; // assist
+    int k; 
     for (i = 7; i >= 0; i--)
     {
         k = result[i];
-        result[i] = ((k ^ binary[i]) ^ c);                    //a xor b xor c
-        c = ((k & binary[i]) | (k & c)) | (binary[i] & c); //ab+bc+ca
+        result[i] = ((k ^ binary[i]) ^ c);                  
+        c = ((k & binary[i]) | (k & c)) | (binary[i] & c);
     }
     if (c == 1)
     {
@@ -31,26 +31,26 @@ void addBinary(int result[], int binary[])
         for (i = 7; i >= 0; i--)
         {
             k = result[i];
-            result[i] = ((k ^ 0) ^ c);           //a xor 0 xor c
-            c = ((k & 0) | (k & c)) | (0 & c); //a0+bc+0a
+            result[i] = ((k ^ 0) ^ c);          
+            c = ((k & 0) | (k & c)) | (0 & c); 
         }
     }
 }
 
-//Função para calcular o cheksum do pacote
+// Calculando o checksum de cada pacote
 int checksum(pacote *pacote)
 {
     if (pacote == NULL)
-        return 0; /* no input string */
+        return 0; 
 
     int binary[8];
 
     int Sum[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
-    //percorre todas as 1204 posições
+    // Percorrendo todas as posições do pacote (1024)
     for (int i = 0; i < pacote->tam; ++i)
     {
-        //tranforma cada posição em um palavra de 8 bits
+        // Transformando cada pacote em uma palavra de 8 bits
         char ch = pacote->dados[i];
         for (int j = 7; j >= 0; --j)
         {
@@ -61,11 +61,11 @@ int checksum(pacote *pacote)
                 binary[7 - j] = 0;
         }
 
-        //vai somando cada palavra
+        // Soma cada palavra
         addBinary(Sum, binary);
     }
 
-    //Soma com o cheksum
+    // Somando com o checksum
     addBinary(Sum, pacote->checksum);
 
     //verifica se o pacote está corrompído
@@ -78,7 +78,7 @@ int checksum(pacote *pacote)
     return validate;
 }
 
-// Função para receber as mensagens
+// Recebendo as mensagens e tratando em caso de erro
 void receiveMessage(int sd, struct sockaddr_in remoteAddr, char *buffer)
 {
     int rc;
@@ -88,7 +88,6 @@ void receiveMessage(int sd, struct sockaddr_in remoteAddr, char *buffer)
     {
         rc = recvfrom(sd, buffer, SIZE_BUFFER, 0, (struct sockaddr *)&remoteAddr, &addrlen);
 
-        //checagem de erro
         if (rc == -1)
         {
             perror("Error");
@@ -99,37 +98,32 @@ void receiveMessage(int sd, struct sockaddr_in remoteAddr, char *buffer)
     }
 }
 
-//função para enviar as mensagens
+// Enviando as mensagens
 void sendMessage(int sd, struct sockaddr_in remoteAddr, char *buffer, int type)
 {
     int rc;
     socklen_t addrlen = sizeof(remoteAddr);
-
-    //Se for do type 1, envia apenas o nome do file que deseja
+    //Se type == 1, então envia-se para o servidor o nome do arquivo desejado
     if (type == 1)
     {
         //envia a requisição do file desejado
         rc = sendto(sd, buffer, SIZE_BUFFER, 0, (struct sockaddr *)&remoteAddr, addrlen);
 
-        //checagem de erro
         if (rc == -1)
         {
             perror("Error");
             exit(1);
         }
     }
-
-    //Se for do type 2, é a resposta contendo uma struct ao servidor.
+    //Se type == 2, então envia-se a resposta contendo uma struct ao servidor
     else if (type == 2)
     {
         message message;
         message.clientPort = PORT_CLIENT_ONE;
         strcpy(message.file, buffer);
 
-        //envia a message
         rc = sendto(sd, &message, sizeof(message), 0, (struct sockaddr *)&remoteAddr, addrlen);
 
-        //checagem de erro
         if (rc == -1)
         {
             perror("Error");
@@ -138,6 +132,7 @@ void sendMessage(int sd, struct sockaddr_in remoteAddr, char *buffer, int type)
     }
 }
 
+// Tratando o pacote recebido
 void receivePackage(int sd, struct sockaddr_in remoteAddr, char *nomearq)
 {
 
@@ -157,7 +152,7 @@ void receivePackage(int sd, struct sockaddr_in remoteAddr, char *nomearq)
 
     socklen_t addrlen = sizeof(remoteAddr);
 
-    //recebe pacote do cliente B
+    //recebe pacote do cliente 
     while (1)
     {
         memset(&pkt, 0, sizeof(pacote));
@@ -169,7 +164,7 @@ void receivePackage(int sd, struct sockaddr_in remoteAddr, char *nomearq)
             exit(1);
         }
 
-        //cheksum corresponde
+        //Verifica o checksum correspondente
         if (checksum(&pkt) == 1 && pkt.numseq == cont + 1)
         {
 
@@ -182,11 +177,11 @@ void receivePackage(int sd, struct sockaddr_in remoteAddr, char *nomearq)
             sendto(sd, &ack, sizeof(ack), 0, (struct sockaddr *)&remoteAddr, addrlen);
             cont++;
 
-            //se o tamanho é menor que 1024, é o ultimo pacote
+            //Verifica se é o último pacote
             if (pkt.tam < 1024)
                 break;
         }
-        //arquivo corrompeu no caminho
+        // Arquivo corrompido
         else
         {
             printf("Pacote %d corrompido no campinho, aguardando reenvio\n", pkt.numseq);
@@ -205,12 +200,11 @@ int main(int argc, char *argv[])
     int sd;
     int PORT_CLIENT_TWO;
     struct sockaddr_in remoteServAddr;
-    struct sockaddr_in remoteClientTwo;
+    struct sockaddr_in clientTwo;
 
-    //buffer para guardar data temporários
+    // Buffer para guardar dados temporários
     char *buffer = (char *)malloc(SIZE_BUFFER * sizeof(char));
 
-    // validateção do parâmetro passado
     if (argc == 1)
     {
         printf("Client One online\n");
@@ -218,37 +212,43 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    //passa o nome do file desejado para o buffer
+    // Passando nome do arquivo desejado para o buffer
     strcpy(buffer, argv[1]);
 
-    //Criação do socket
+    // Criando o socket
     sd = socket(AF_INET, SOCK_DGRAM, 0);
-    //Checagem de erro
+
+    // Tratando erro
     if (sd == -1)
     {
         perror("Error");
         exit(1);
     }
 
-    //zerando a struct
+    // Zerando a struct
     memset(&remoteServAddr, 0, sizeof(remoteServAddr));
 
-    //struct com data do servidor
+    // Struct com dados do servidor
     remoteServAddr.sin_family = AF_INET;
     remoteServAddr.sin_port = htons(SERVER_PORT);
     remoteServAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    //enviando requisição ao servidor, em busca de algum cliente
-    //que tenha tal file
+    /*
+        Enviando a requisição para o servidor com o nome do arquivo,
+        porta do server e buffer.
+    */
     sendMessage(sd, remoteServAddr, buffer, 1);
 
     printf("Requisição enviada ao servidor\n");
     sleep(1);
-    //zerando o buffer para receber a resposta do servidor
+
+    // Zerando buffer para receber o response do server
     memset(buffer, '\0', SIZE_BUFFER);
 
-    //Recebe a resposta do servidor, contendo a porta do cliente
-    //que possui o file
+    /*
+        Recebendo a resposta do servidor, com a porta
+        do cliente que possui o arquivo
+    */
     receiveMessage(sd, remoteServAddr, buffer);
     if (buffer[0] == '1')
     {
@@ -262,42 +262,44 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    //Comunicação com o cliente Two
-    //zerando a struct
-    memset(&remoteClientTwo, 0, sizeof(remoteClientTwo));
+    //Comunicação com o clientTwo
 
-    //struct com data do cliente Two
-    remoteClientTwo.sin_family = AF_INET;
-    remoteClientTwo.sin_port = htons(PORT_CLIENT_TWO);
-    remoteClientTwo.sin_addr.s_addr = inet_addr("127.0.0.1");
+    // Zerando a struct
+    memset(&clientTwo, 0, sizeof(clientTwo));
+
+    // Struct com dados do clientTwo
+    clientTwo.sin_family = AF_INET;
+    clientTwo.sin_port = htons(PORT_CLIENT_TWO);
+    clientTwo.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     strcpy(buffer, argv[1]);
-    //envia uma requisição com o nome do file para o cliente Two
-    sendMessage(sd, remoteClientTwo, buffer, 1);
+    //Envia uma requisição com o nome do file para o clientTwo
+    sendMessage(sd, clientTwo, buffer, 1);
     sleep(1);
     printf("Requisição enviada ao cliente que possui o file\n");
     memset(buffer, '\0', SIZE_BUFFER);
 
-    receiveMessage(sd, remoteClientTwo, buffer);
-    //se o cliente Two confirmar que tem o file, começa a transferência
+    receiveMessage(sd, clientTwo, buffer);
+
+    //Se o clientTwo confirmar que tem o file, começa a transferência
     if (buffer[0] == '1')
     {
         sleep(1);
         printf("Iniciando transferência\n");
         sleep(1);
         strcpy(buffer, argv[1]);
-        receivePackage(sd, remoteClientTwo, buffer);
+        receivePackage(sd, clientTwo, buffer);
 
-        //Avisando o servidor que o cliente One tambem possui o arquivo
+        //Avisando o servidor que o clientOne tambem possui o arquivo
         sendMessage(sd, remoteServAddr, buffer, 2);
 
         memset(buffer, '\0', SIZE_BUFFER);
         receiveMessage(sd, remoteServAddr, buffer);
         if (buffer[0] == '1')
-            printf("\nCliente One agora presente na base de dados\n");
+            printf("\nClientOne agora presente na base de dados\n");
     }
     else
-        printf("Error, cliente Two não conseguiu enviar o file!\n");
+        printf("Error, o cliente não conseguiu enviar o file!\n");
 
     free(buffer);
     return 0;
