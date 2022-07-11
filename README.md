@@ -46,7 +46,7 @@ Execute o comando abaixo para abrir o cliente dois
 ```terminal
     cd clients/Two
 
-    cc clientTwo.c -o clientTwo
+    gcc clientTwo.c -o clientTwo
 ```
 
 Execute o comando abaixo para abrir o cliente um
@@ -54,7 +54,7 @@ Execute o comando abaixo para abrir o cliente um
 ```terminal
     cd clients/One
 
-    cc clientOne.c -o clientOne
+    gcc clientOne.c -o clientOne
 ```
 
 ### 2.5 Transferindo os arquivos
